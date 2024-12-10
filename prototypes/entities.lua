@@ -1,3 +1,6 @@
+require 'circuit-connector-generated-definitions'
+require 'circuit-connector-sprites'
+
 local collision_mask_util = require('collision-mask-util')
 
 local empty_sheet = {
@@ -140,7 +143,7 @@ local function create_loaders(prefix, base_underground_name, tint)
     }
 end
 
-local connector_definitions = circuit_connector_definitions.create(
+local connector_definitions = circuit_connector_definitions.create_vector(
     universal_connector_template,
     {
         { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = util.by_pixel(10, -0.5), show_shadow = false },
@@ -160,8 +163,14 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
     local base_entity = data.raw['underground-belt'][base_underground_name]
     local rounded_items_per_second = math.floor(base_entity.speed * 480 * 100 + 0.5) / 100
     local description = { '',
-        '[font=default-semibold][color=255,230,192]', { 'description.belt-speed' }, ':[/color][/font] ',
-        rounded_items_per_second, ' ', { 'description.belt-items' }, { 'per-second-suffix' } }
+        '[font=default-semibold][color=255,230,192]',
+        { 'description.belt-speed' },
+        ':[/color][/font] ',
+        tostring(rounded_items_per_second),
+        ' ',
+        { 'description.belt-items' },
+        { 'per-second-suffix' }
+    }
 
     local loader_inserter = {
         type = 'inserter',
@@ -262,9 +271,8 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
     filter_loader_inserter.filter_count = 5
     filter_loader_inserter.next_upgrade = filter_next_upgrade
 
-    if settings.startup['miniloader-enable-standard'].value then
-        data:extend { loader_inserter }
-    end
+    data:extend { loader_inserter }
+
     if settings.startup['miniloader-enable-filter'].value then
         data:extend { filter_loader_inserter }
     end

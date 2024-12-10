@@ -28,9 +28,7 @@ local function create_items(prefix, base_underground_name, tint)
     filter_item.order, _ = string.gsub(item.order, 'e%[', 'f[filter-', 1)
     filter_item.place_result = filter_name .. '-inserter'
 
-    if settings.startup['miniloader-enable-standard'].value then
-        data:extend { item }
-    end
+    data:extend { item }
     if settings.startup['miniloader-enable-filter'].value then
         data:extend { filter_item }
     end

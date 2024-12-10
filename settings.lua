@@ -17,13 +17,6 @@ data:extend {
 
     {
         type = 'bool-setting',
-        name = 'miniloader-enable-standard',
-        setting_type = 'startup',
-        default_value = true,
-    },
-
-    {
-        type = 'bool-setting',
         name = 'miniloader-enable-filter',
         setting_type = 'startup',
         default_value = true,
