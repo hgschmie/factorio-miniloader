@@ -58,9 +58,9 @@ end
 -- Event Handlers
 
 local function on_init()
-    global.player_placed_blueprint = {}
-    global.previous_opened_blueprint_for = {}
-    global.split_lane_configuration = {}
+    storage.player_placed_blueprint = {}
+    storage.previous_opened_blueprint_for = {}
+    storage.split_lane_configuration = {}
     circuit.on_init()
     compat_pickerextended.on_load()
     gui.on_init()
@@ -218,14 +218,14 @@ local function on_miniloader_inserter_mined(ev)
 
     local inserters = util.get_loader_inserters(entity)
     if util.is_output_miniloader_inserter(entity)
-        and global.split_lane_configuration[entity.unit_number] then
+        and storage.split_lane_configuration[entity.unit_number] then
         fast_replace_miniloader_state = {
             position = entity.position,
             right_lane_settings = util.capture_settings(inserters[2]),
             surface = entity.surface,
             tick = ev.tick,
         }
-        global.split_lane_configuration[entity.unit_number] = nil
+        storage.split_lane_configuration[entity.unit_number] = nil
     end
     for i = 1, #inserters do
         if inserters[i] ~= entity then
@@ -255,7 +255,7 @@ end
 local function on_placed_blueprint(ev, player, bp_entities)
     if not next(bp_entities) then return end
 
-    global.player_placed_blueprint[ev.player_index] = ev.tick
+    storage.player_placed_blueprint[ev.player_index] = ev.tick
 
     local surface = player.surface
     local bp_area = blueprint.bounding_box(bp_entities)
@@ -274,8 +274,8 @@ local function on_placed_blueprint(ev, player, bp_entities)
 
     if blueprint_contained_miniloader then
         -- remember where we have placed a blueprint so we can check for changes next tick
-        if not global.placed_blueprint_areas then global.placed_blueprint_areas = {} end
-        global.placed_blueprint_areas[#global.placed_blueprint_areas + 1] = {
+        if not storage.placed_blueprint_areas then storage.placed_blueprint_areas = {} end
+        storage.placed_blueprint_areas[#storage.placed_blueprint_areas + 1] = {
             surface = surface,
             area = surface_area,
         }
@@ -285,8 +285,8 @@ end
 -- A blueprint placed over existing miniloaders in the previous tick
 -- may have changed their orientation.
 local function check_placed_blueprints_for_miniloaders()
-    if not global.placed_blueprint_areas or not next(global.placed_blueprint_areas) then return end
-    for _, data in ipairs(global.placed_blueprint_areas) do
+    if not storage.placed_blueprint_areas or not next(storage.placed_blueprint_areas) then return end
+    for _, data in ipairs(storage.placed_blueprint_areas) do
         local surface = data.surface
         local area = data.area
         if surface.valid then
@@ -302,7 +302,7 @@ local function check_placed_blueprints_for_miniloaders()
         end
     end
 
-    global.placed_blueprint_areas = {}
+    storage.placed_blueprint_areas = {}
 end
 
 local function on_pre_build(ev)
@@ -344,7 +344,7 @@ local function on_entity_settings_pasted(ev)
             local right_src = util.get_loader_inserters(src)[2]
             local right_dst = util.get_loader_inserters(dst)[2]
             if right_src and right_dst then
-                global.split_lane_configuration[dst.unit_number] = global.split_lane_configuration[src.unit_number]
+                storage.split_lane_configuration[dst.unit_number] = storage.split_lane_configuration[src.unit_number]
                 circuit.copy_inserter_settings(right_src, right_dst)
             end
         end
@@ -364,12 +364,12 @@ local function on_gui_closed(event)
         and player.cursor_stack.is_blueprint
         and not player.cursor_stack.is_blueprint_setup()
     then
-        global.previous_opened_blueprint_for[event.player_index] = {
+        storage.previous_opened_blueprint_for[event.player_index] = {
             blueprint = event.item,
             tick = event.tick,
         }
     else
-        global.previous_opened_blueprint_for[event.player_index] = nil
+        storage.previous_opened_blueprint_for[event.player_index] = nil
     end
 end
 

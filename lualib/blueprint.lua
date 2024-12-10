@@ -20,7 +20,7 @@ end
 local function tag_with_configuration(surface, bp_entity)
     local inserters = surface.find_entities_filtered { type = 'inserter', position = bp_entity.position }
     if not inserters[1] then return end
-    if not global.split_lane_configuration[inserters[1].unit_number] then return end
+    if not storage.split_lane_configuration[inserters[1].unit_number] then return end
     local right_lane_inserter = inserters[2]
     if right_lane_inserter and util.is_output_miniloader_inserter(right_lane_inserter) then
         bp_entity.tags = {
@@ -135,7 +135,7 @@ function M.get_blueprint_to_setup(player_index)
     end
 
     -- update of existing blueprint
-    local opened_blueprint = global.previous_opened_blueprint_for[player_index]
+    local opened_blueprint = storage.previous_opened_blueprint_for[player_index]
     if opened_blueprint
         and opened_blueprint.tick == game.tick
         and opened_blueprint.blueprint

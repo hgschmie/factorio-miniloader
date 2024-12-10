@@ -271,7 +271,7 @@ local function on_pre_build(ev)
 end
 
 function M.on_init()
-    global.onwireplaced = {
+    storage.onwireplaced = {
         monitored_players = {},
         selected_ccd_set_for = {},
         bp_overplace = {},
@@ -280,26 +280,26 @@ function M.on_init()
 end
 
 function M.on_load()
-    if not global.onwireplaced then
+    if not storage.onwireplaced then
         return -- expect on_configuration_changed to be called
     end
 
-    if global.onwireplaced.monitored_players then
-        monitored_players = global.onwireplaced.monitored_players
+    if storage.onwireplaced.monitored_players then
+        monitored_players = storage.onwireplaced.monitored_players
         if next(monitored_players) then
             event.register(defines.events.on_selected_entity_changed, on_selected_entity_changed)
         end
     end
 
-    if global.onwireplaced.selected_ccd_set_for then
-        selected_ccd_set_for = global.onwireplaced.selected_ccd_set_for
+    if storage.onwireplaced.selected_ccd_set_for then
+        selected_ccd_set_for = storage.onwireplaced.selected_ccd_set_for
         if next(selected_ccd_set_for) then
             event.register(defines.events.on_tick, check_selection_for_all)
         end
     end
 
-    if global.onwireplaced.bp_overplace then
-        bp_overplace = global.onwireplaced.bp_overplace
+    if storage.onwireplaced.bp_overplace then
+        bp_overplace = storage.onwireplaced.bp_overplace
         if next(bp_overplace) then
             event.register(defines.events.on_tick, check_after_blueprint_placed)
         end
@@ -329,14 +329,14 @@ function M.on_load()
 end
 
 function M.on_configuration_changed()
-    if not global.onwireplaced then
-        global.onwireplaced = {
-            monitored_players = global.monitored_players or {},
-            selected_ccd_set_for = global.selected_ccd_set_for or {},
+    if not storage.onwireplaced then
+        storage.onwireplaced = {
+            monitored_players = storage.monitored_players or {},
+            selected_ccd_set_for = storage.selected_ccd_set_for or {},
             bp_overplace = {},
         }
-        global.monitored_players = nil
-        global.selected_ccd_set_for = nil
+        storage.monitored_players = nil
+        storage.selected_ccd_set_for = nil
     end
     M.on_load()
 end

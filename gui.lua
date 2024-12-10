@@ -82,7 +82,7 @@ local function on_gui_opened(ev)
         local relative = player.gui.relative
         local inserters = util.get_loader_inserters(entity)
         local switch_state = (entity == inserters[2]) and 'right'
-            or (global.split_lane_configuration[entity.unit_number]) and 'left'
+            or (storage.split_lane_configuration[entity.unit_number]) and 'left'
             or 'none'
         create_lane_swap_gui(relative, entity, switch_state)
     end
@@ -115,7 +115,7 @@ local function on_gui_checked_state_changed(ev)
 
     local inserters = util.get_loader_inserters(entity)
     local main_inserter = inserters[1]
-    global.split_lane_configuration[main_inserter.unit_number] = element.state and true or nil
+    storage.split_lane_configuration[main_inserter.unit_number] = element.state and true or nil
     element.parent.miniloader_lane_switch.switch_state = element.state and 'left' or 'none'
     player.opened = main_inserter
 end
@@ -130,7 +130,7 @@ local function on_gui_switch_state_changed(ev)
 
     local inserters = util.get_loader_inserters(entity)
     local main_inserter = inserters[1]
-    global.split_lane_configuration[main_inserter.unit_number] = element.switch_state ~= 'none' and true or nil
+    storage.split_lane_configuration[main_inserter.unit_number] = element.switch_state ~= 'none' and true or nil
     element.parent.miniloader_split_lane_checkbox.state = element.switch_state ~= 'none'
     player.opened = element.switch_state == 'right' and inserters[2] or inserters[1]
 end
@@ -138,17 +138,17 @@ end
 local M = {}
 
 function M.on_init()
-    global.gui = {
+    storage.gui = {
         monitored_entities = {},
     }
     M.on_load()
 end
 
 function M.on_load()
-    if not global.gui then
+    if not storage.gui then
         return -- expect on_configuration_changed
     end
-    monitored_entities = global.gui.monitored_entities
+    monitored_entities = storage.gui.monitored_entities
     if next(monitored_entities) then
         ontick.register(monitor_open_guis, POLL_INTERVAL)
     end
@@ -159,8 +159,8 @@ function M.on_load()
 end
 
 function M.on_configuration_changed()
-    if not global.gui then
-        global.gui = {
+    if not storage.gui then
+        storage.gui = {
             monitored_entities = {},
         }
     end

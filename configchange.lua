@@ -91,7 +91,7 @@ add_migration {
     low = { 0, 0, 0 },
     high = { 1, 12, 3 },
     task = function()
-        global.player_placed_blueprint = {}
+        storage.player_placed_blueprint = {}
     end,
 }
 
@@ -100,7 +100,7 @@ add_migration {
     low = { 0, 0, 0 },
     high = { 1, 14, 3 },
     task = function()
-        global.previous_opened_blueprint_for = {}
+        storage.previous_opened_blueprint_for = {}
     end,
 }
 
@@ -109,7 +109,7 @@ add_migration {
     low = { 0, 0, 0 },
     high = { 1, 15, 4 },
     task = function()
-        global.split_lane_configuration = {}
+        storage.split_lane_configuration = {}
     end,
 }
 
