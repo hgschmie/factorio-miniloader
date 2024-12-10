@@ -1,3 +1,5 @@
+local collision_mask_util = require('collision-mask-util')
+
 local empty_sheet = {
     filename = '__core__/graphics/empty.png',
     priority = 'very-low',
@@ -12,7 +14,7 @@ data:extend {
         type = 'container',
         flags = { 'player-creation' },
         collision_box = { { -0.1, -0.1 }, { 0.1, 0.1 } },
-        collision_mask = {},
+        collision_mask = collision_mask_util.new_mask(),
         inventory_size = 0,
         picture = empty_sheet,
     },
@@ -23,7 +25,7 @@ local function create_loaders(prefix, base_underground_name, tint)
     local filter_loader_name = prefix .. 'filter-miniloader'
     local name = loader_name .. '-loader'
 
-    local entity = util.table.deepcopy(data.raw['underground-belt'][base_underground_name])
+    local entity = util.copy(data.raw['underground-belt'][base_underground_name])
     entity.type = 'loader-1x1'
     entity.name = name
     entity.icons = nil
@@ -31,7 +33,7 @@ local function create_loaders(prefix, base_underground_name, tint)
     entity.localised_name = { 'entity-name.' .. loader_name }
     entity.minable = nil
     entity.collision_box = { { -0.3, -0.3 }, { 0.3, 0.3 } }
-    entity.collision_mask = { 'transport-belt-layer' }
+    entity.collision_mask = collision_mask_util.get_default_mask('loader')
     entity.selection_box = { { 0, 0 }, { 0, 0 } }
     entity.filter_count = 0
     entity.fast_replaceable_group = 'loader'
@@ -41,51 +43,31 @@ local function create_loaders(prefix, base_underground_name, tint)
                 -- Base
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-base.png',
-                    width = 96,
-                    height = 96,
-                    y = 0,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-base.png',
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0
-                    }
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
+                    y = 0
                 },
                 -- Mask
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-mask.png',
-                    width = 96,
-                    height = 96,
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
                     y = 0,
                     tint = tint,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-mask.png',
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0,
-                        tint = tint,
-                    }
                 },
                 -- Shadow
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-shadow.png',
                     draw_as_shadow = true,
-                    width = 96,
-                    height = 96,
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
                     y = 0,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-shadow.png',
-                        draw_as_shadow = true,
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0,
-                    }
                 }
             }
         },
@@ -94,51 +76,31 @@ local function create_loaders(prefix, base_underground_name, tint)
                 -- Base
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-base.png',
-                    width = 96,
-                    height = 96,
-                    y = 96,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-base.png',
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192
-                    }
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
+                    y = 192
                 },
                 -- Mask
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-mask.png',
-                    width = 96,
-                    height = 96,
-                    y = 96,
-                    tint = tint,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-mask.png',
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192,
-                        tint = tint
-                    }
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
+                    y = 192,
+                    tint = tint
                 },
                 -- Shadow
                 {
                     filename = '__miniloader__/graphics/entity/miniloader-structure-shadow.png',
-                    width = 96,
-                    height = 96,
-                    y = 96,
+                    height = 192,
+                    priority = 'extra-high',
+                    scale = 0.5,
+                    width = 192,
+                    y = 192,
                     draw_as_shadow = true,
-                    hr_version = {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-shadow.png',
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192,
-                        draw_as_shadow = true,
-                    }
                 }
             }
         },
@@ -146,30 +108,18 @@ local function create_loaders(prefix, base_underground_name, tint)
             sheet = {
                 filename = '__miniloader__/graphics/entity/miniloader-structure-back-patch.png',
                 priority = 'extra-high',
-                width = 96,
-                height = 96,
-                hr_version = {
-                    filename = '__miniloader__/graphics/entity/hr-miniloader-structure-back-patch.png',
-                    priority = 'extra-high',
-                    width = 192,
-                    height = 192,
-                    scale = 0.5
-                }
+                width = 192,
+                height = 192,
+                scale = 0.5
             }
         },
         front_patch = {
             sheet = {
                 filename = '__miniloader__/graphics/entity/miniloader-structure-front-patch.png',
                 priority = 'extra-high',
-                width = 96,
-                height = 96,
-                hr_version = {
-                    filename = '__miniloader__/graphics/entity/hr-miniloader-structure-front-patch.png',
-                    priority = 'extra-high',
-                    width = 192,
-                    height = 192,
-                    scale = 0.5
-                }
+                width = 192,
+                height = 192,
+                scale = 0.5
             }
         }
     }
@@ -177,14 +127,11 @@ local function create_loaders(prefix, base_underground_name, tint)
     entity.belt_length = 0.6
     entity.next_upgrade = nil
 
-    local filter_entity = util.table.deepcopy(entity)
+    local filter_entity = util.copy(entity)
     filter_entity.name = filter_loader_name .. '-loader'
     filter_entity.structure.direction_in.sheets[1].filename = '__miniloader__/graphics/entity/miniloader-filter-structure-base.png'
-    filter_entity.structure.direction_in.sheets[1].hr_version.filename = '__miniloader__/graphics/entity/hr-miniloader-filter-structure-base.png'
     filter_entity.structure.direction_out.sheets[1].filename = '__miniloader__/graphics/entity/miniloader-filter-structure-base.png'
-    filter_entity.structure.direction_out.sheets[1].hr_version.filename = '__miniloader__/graphics/entity/hr-miniloader-filter-structure-base.png'
     filter_entity.structure.front_patch.sheet.filename = '__miniloader__/graphics/entity/miniloader-filter-structure-front-patch.png'
-    filter_entity.structure.front_patch.sheet.hr_version.filename = '__miniloader__/graphics/entity/hr-miniloader-filter-structure-front-patch.png'
     filter_entity.filter_count = 5
 
     data:extend {
@@ -235,7 +182,7 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
         },
         minable = { mining_time = 0.1, result = loader_name },
         collision_box = { { -0.2, -0.2 }, { 0.2, 0.2 } },
-        collision_mask = { 'floor-layer', 'object-layer', 'water-tile', space_collision_layer },
+        collision_mask = collision_mask_util.get_default_mask('inserter'),
         selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
         selection_priority = 50,
         allow_custom_vectors = true,
@@ -255,55 +202,32 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
             sheets = {
                 -- Base
                 {
-                    filename   = '__miniloader__/graphics/entity/miniloader-inserter-base.png',
-                    width      = 96,
-                    height     = 96,
-                    y          = 96,
-                    hr_version =
-                    {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-inserter-base.png',
-                        height   = 192,
-                        priority = 'extra-high',
-                        scale    = 0.5,
-                        width    = 192,
-                        y        = 192
-                    }
+                    filename = '__miniloader__/graphics/entity/miniloader-inserter-base.png',
+                    height   = 192,
+                    priority = 'extra-high',
+                    scale    = 0.5,
+                    width    = 192,
+                    y        = 192
                 },
                 -- Mask
                 {
-                    filename   = '__miniloader__/graphics/entity/miniloader-structure-mask.png',
-                    width      = 96,
-                    height     = 96,
-                    y          = 96,
-                    tint       = tint,
-                    hr_version =
-                    {
-                        filename = '__miniloader__/graphics/entity/hr-miniloader-structure-mask.png',
-                        height   = 192,
-                        priority = 'extra-high',
-                        scale    = 0.5,
-                        width    = 192,
-                        y        = 192,
-                        tint     = tint
-                    }
+                    filename = '__miniloader__/graphics/entity/miniloader-structure-mask.png',
+                    height   = 192,
+                    priority = 'extra-high',
+                    scale    = 0.5,
+                    width    = 192,
+                    y        = 192,
+                    tint     = tint
                 },
                 -- Shadow
                 {
                     filename       = '__miniloader__/graphics/entity/miniloader-structure-shadow.png',
-                    width          = 96,
-                    height         = 96,
-                    y              = 96,
+                    height         = 192,
+                    priority       = 'extra-high',
+                    scale          = 0.5,
+                    width          = 192,
+                    y              = 192,
                     draw_as_shadow = true,
-                    hr_version     =
-                    {
-                        filename       = '__miniloader__/graphics/entity/hr-miniloader-structure-shadow.png',
-                        height         = 192,
-                        priority       = 'extra-high',
-                        scale          = 0.5,
-                        width          = 192,
-                        y              = 192,
-                        draw_as_shadow = true,
-                    }
                 }
             }
         },
@@ -315,11 +239,6 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         next_upgrade = next_upgrade,
     }
-
-    --Space Exploration
-    if (prefix == 'space-') or (prefix == 'deep-space-') then
-        loader_inserter.collision_mask = { 'floor-layer', 'item-layer', 'object-layer', 'water-tile' }
-    end
 
     if settings.startup['miniloader-energy-usage'].value then
         loader_inserter.energy_per_movement = '2kJ'
@@ -334,12 +253,11 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
         loader_inserter[k] = base_entity[k]
     end
 
-    local filter_loader_inserter = util.table.deepcopy(loader_inserter)
+    local filter_loader_inserter = util.copy(loader_inserter)
     filter_loader_inserter.name = filter_name
     filter_loader_inserter.localised_name = { 'entity-name.' .. filter_loader_name }
     filter_loader_inserter.icons[1].icon = '__miniloader__/graphics/item/filter-icon-base.png'
     filter_loader_inserter.platform_picture.sheets[1].filename = '__miniloader__/graphics/entity/miniloader-filter-inserter-base.png'
-    filter_loader_inserter.platform_picture.sheets[1].hr_version.filename = '__miniloader__/graphics/entity/hr-miniloader-filter-inserter-base.png'
     filter_loader_inserter.minable.result = filter_loader_name
     filter_loader_inserter.filter_count = 5
     filter_loader_inserter.next_upgrade = filter_next_upgrade

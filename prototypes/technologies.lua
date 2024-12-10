@@ -30,7 +30,7 @@ local function create_technology(prefix, tech_prereqs, tint)
         },
         effects = effects,
         prerequisites = tech_prereqs,
-        unit = util.table.deepcopy(main_prereq.unit),
+        unit = util.copy(main_prereq.unit),
         order = main_prereq.order
     }
 
