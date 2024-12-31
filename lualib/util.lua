@@ -87,18 +87,15 @@ end
 -- Direction utilities
 
 function util.is_ns(direction)
-    return direction == 0 or direction == 4
+    return direction == defines.direction.north or direction == defines.direction.south
 end
 
 function util.is_ew(direction)
-    return direction == 2 or direction == 6
+    return direction == defines.direction.east or direction == defines.direction.west
 end
 
 function util.opposite_direction(direction)
-    if direction >= 4 then
-        return direction - 4
-    end
-    return direction + 4
+    return (direction + 8) % 16
 end
 
 -- orientation utilities
@@ -267,6 +264,25 @@ function util.update_inserters(entity)
             inserters[i].drop_target = entity
         end
     end
+
+    for _, dp in pairs(drop) do
+        rendering.draw_rectangle {
+            color = { r = 1, g = 0, b = 0 },
+            surface = entity.surface,
+            left_top = { dp.x - 0.1, dp.y - 0.1 },
+            right_bottom = { dp.x + 0.1, dp.y + 0.1 },
+            time_to_live = 10,
+        }
+    end
+
+    rendering.draw_rectangle {
+        color = { r = 0, g = 1, b = 0 },
+        surface = entity.surface,
+        left_top = { pickup.x - 0.1, pickup.y - 0.1 },
+        right_bottom = { pickup.x + 0.1, pickup.y + 0.1 },
+        time_to_live = 10,
+    }
+
 end
 
 function util.select_main_inserter(surface, position)
@@ -342,7 +358,7 @@ end
 function util.rebuild_belt(entity)
     local surface = entity.surface
     local name = entity.name
-    local protos = game.get_filtered_entity_prototypes { { filter = 'type', type = entity.type } }
+    local protos = prototypes.get_entity_filtered { { filter = 'type', type = entity.type } }
     local temporary_replacement
     for proto_name in pairs(protos) do
         if proto_name ~= name and proto_name ~= '__self' then
@@ -378,8 +394,15 @@ function util.rebuild_belt(entity)
 end
 
 local control_behavior_keys = {
-    'circuit_condition', 'logistic_condition', 'connect_to_logistic_network',
-    'circuit_read_hand_contents', 'circuit_mode_of_operation', 'circuit_hand_read_mode', 'circuit_set_stack_size', 'circuit_stack_control_signal',
+    'circuit_set_filters',          -- LuaInserverControlBehavior, 2.0
+    'circuit_read_hand_contents',   -- LuaInserverControlBehavior
+    'circuit_hand_read_mode',       -- LuaInserverControlBehavior
+    'circuit_set_stack_size',       -- LuaInserverControlBehavior
+    'circuit_stack_control_signal', -- LuaInserverControlBehavior
+    'circuit_enable_disable',       -- LuaGenericOnOffBehavior, 2.0
+    'circuit_condition',            -- LuaGenericOnOffBehavior
+    'connect_to_logistic_network',  -- LuaGenericOnOffBehavior -- TODO, RO
+    'logistic_condition',           -- LuaGenericOnOffBehavior -- TODO - RO
 }
 
 function util.capture_settings(ghost)

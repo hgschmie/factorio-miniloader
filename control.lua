@@ -42,19 +42,6 @@ local use_snapping = settings.global['miniloader-snapping'].value
   P: pickup position
 ]]
 
-local function register_bobs_blacklist()
-    for _, interface_name in ipairs { 'bobinserters', 'boblogistics' } do
-        local interface = remote.interfaces[interface_name]
-        if interface and interface['blacklist_inserter'] then
-            for entity_name in pairs(game.entity_prototypes) do
-                if util.is_miniloader_inserter_name(entity_name) then
-                    remote.call(interface_name, 'blacklist_inserter', entity_name)
-                end
-            end
-        end
-    end
-end
-
 -- Event Handlers
 
 local function on_init()
@@ -64,7 +51,6 @@ local function on_init()
     circuit.on_init()
     compat_pickerextended.on_load()
     gui.on_init()
-    register_bobs_blacklist()
 end
 
 local function on_load()
@@ -80,7 +66,6 @@ local function on_configuration_changed(configuration_changed_data)
         circuit.on_configuration_changed()
         gui.on_configuration_changed()
     end
-    register_bobs_blacklist()
     configchange.fix_inserter_counts()
 end
 
@@ -107,7 +92,7 @@ local function on_built_miniloader(entity, orientation, tags)
 end
 
 local function on_robot_built(ev)
-    local entity = ev.created_entity
+    local entity = ev.entity
     if util.is_miniloader_inserter(entity) then
         on_built_miniloader(entity, util.orientation_from_inserters(entity), ev.tags)
     end
@@ -128,7 +113,7 @@ local function on_script_revive(ev)
 end
 
 local function on_player_built(ev)
-    local entity = ev.created_entity
+    local entity = ev.entity
 
     if util.is_miniloader_inserter(entity) then
         local orientation = util.orientation_from_inserters(entity)
@@ -308,9 +293,11 @@ end
 local function on_pre_build(ev)
     local player_index = ev.player_index
     local player = game.players[player_index]
-    local bp_entities = player.get_blueprint_entities()
-    if bp_entities then
-        return on_placed_blueprint(ev, player, bp_entities)
+    if player.cursor_stack and player.cursor_stack.valid_for_read and player.cursor_stack.is_blueprint and player.cursor_stack.is_blueprint_setup() then
+        local bp_entities = player.cursor_stack.get_blueprint_entities() -- TODO
+        if bp_entities then
+            return on_placed_blueprint(ev, player, bp_entities)
+        end
     end
 end
 
@@ -422,6 +409,8 @@ script.on_configuration_changed(on_configuration_changed)
 
 event.register(defines.events.on_built_entity, on_player_built)
 event.register(defines.events.on_robot_built_entity, on_robot_built)
+event.register(defines.events.on_space_platform_built_entity, on_robot_built)
+
 event.register(defines.events.on_player_rotated_entity, on_rotated)
 
 event.register(defines.events.on_pre_player_mined_item, on_pre_player_mined_item)
@@ -437,7 +426,7 @@ event.register(defines.events.on_pre_build, on_pre_build)
 
 event.register(defines.events.on_player_setup_blueprint, on_setup_blueprint)
 event.register(defines.events.on_marked_for_deconstruction, on_marked_for_deconstruction)
-event.register(defines.events.on_canceled_deconstruction, on_canceled_deconstruction)
+event.register(defines.events. on_cancelled_deconstruction, on_canceled_deconstruction)
 
 event.register(defines.events.on_marked_for_upgrade, on_marked_for_upgrade)
 
@@ -457,3 +446,19 @@ event.register(defines.events.on_runtime_mod_setting_changed, function(ev)
 end)
 
 event.register(defines.events.on_tick, check_placed_blueprints_for_miniloaders)
+
+event.register(defines.events.on_marked_for_upgrade, function(ev)
+    game.print(serpent.line(ev))
+end)
+
+event.register(defines.events.on_cancelled_upgrade, function(ev)
+    game.print(serpent.line(ev))
+end)
+
+event.register(defines.events.on_marked_for_deconstruction, function(ev)
+    game.print(serpent.line(ev))
+end)
+
+event.register(defines.events.on_cancelled_deconstruction, function(ev)
+    game.print(serpent.line(ev))
+end)

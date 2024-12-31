@@ -30,38 +30,38 @@ local function snap_loader_to_target(loader, entity)
     if util.is_ns(ldir) and lx >= ex - 0.6 and lx <= ex + 0.6 then
         -- loader and entity are aligned vertically
         if ly > ey then -- entity to north
-            if edir == 4 then
-                direction = 4
+            if edir == defines.direction.south then
+                direction = defines.direction.south
                 type = 'input'
             else
-                direction = 0
+                direction = defines.direction.north
                 type = 'output'
             end
         else -- entity to south
-            if edir == 0 then
-                direction = 0
+            if edir == defines.direction.north then
+                direction = defines.direction.north
                 type = 'input'
             else
-                direction = 4
+                direction = defines.direction.south
                 type = 'output'
             end
         end
     elseif util.is_ew(ldir) and ly >= ey - 0.6 and ly <= ey + 0.6 then
         -- loader and entity are aligned horizontally
         if lx > ex then -- entity to west
-            if edir == 2 then
-                direction = 2
+            if edir == defines.direction.east then
+                direction = defines.direction.east
                 type = 'input'
             else
-                direction = 6
+                direction = defines.direction.west
                 type = 'output'
             end
         else -- entity to east
-            if edir == 6 then
-                direction = 6
+            if edir == defines.direction.west then
+                direction = defines.direction.west
                 type = 'input'
             else
-                direction = 2
+                direction = defines.direction.east
                 type = 'output'
             end
         end
@@ -97,7 +97,7 @@ local function idiot_snap(loader, entity)
     local ep = entity.position
     local direction = loader.direction
     local distance = axis_distance(ep, lp, direction)
-    if axis_distance(ep, lp, util.opposite_direction(direction)) > distance then
+    if axis_distance(ep, lp, util.opposite_direction(direction)) > (distance or 1) then
         direction = util.opposite_direction(direction)
     end
     if loader.direction ~= direction or loader.type == 'entity-ghost' or loader.loader_type ~= 'output' then

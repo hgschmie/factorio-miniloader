@@ -88,12 +88,16 @@ if chute_enabled then
                 icon_size = 128,
             },
         },
-        prerequisites = { 'electronics', },
         effects = {
             {
                 type = 'unlock-recipe',
                 recipe = 'chute-miniloader',
             },
+        },
+        research_trigger = {
+            type = 'craft-item',
+            item = 'electronic-circuit',
+            count = 10
         }
     })
 end
@@ -113,7 +117,7 @@ if filter_enabled then
     })
 
     if chute_enabled then
-        table.insert(technologies[3].effects, {
+        table.insert(technologies[4].effects, {
             type = 'unlock-recipe',
             recipe = 'chute-filter-miniloader',
         })
@@ -121,13 +125,17 @@ if filter_enabled then
 end
 
 for _, technology in pairs(technologies) do
-    local main_prereq = data.raw['technology'][technology.prerequisites[1]]
-    if main_prereq.unit then
-        technology.unit = util.copy(main_prereq.unit)
-    else
-        technology.research_trigger = util.copy(main_prereq.research_trigger)
+
+    if not (technology.unit or technology.research_trigger) then
+        local main_prereq = data.raw['technology'][technology.prerequisites[1]]
+        technology.order = main_prereq.order
+
+        if main_prereq.unit then
+            technology.unit = util.copy(main_prereq.unit)
+        else
+            technology.research_trigger = util.copy(main_prereq.research_trigger)
+        end
     end
-    technology.order = main_prereq.order
 end
 
 data.extend(technologies)

@@ -46,14 +46,31 @@ local selected_ccd_set_for
 
 local function ccd_key(ccd)
     --do return ccd.wire.."-"..ccd.source_circuit_id.."-"..ccd.target_circuit_id.."-"..ccd.target_entity.unit_number end
-    return (ccd.wire - 2)
-        + (ccd.source_circuit_id - 1) * 2
-        + (ccd.target_circuit_id - 1) * 4
-        + ccd.target_entity.unit_number * 8
+    return bit32.band(ccd.wire, 15)
+        + bit32.lshift(bit32.band(ccd.source_circuit_id - 1, 15), 4)
+        + bit32.lshift(bit32.band(ccd.target_circuit_id - 1, 15), 8)
+        + bit32.lshift(ccd.target_entity.unit_number, 12)
 end
 
 local function ccd_set(entity)
-    local ccds = entity.circuit_connection_definitions
+    local ccds = {}
+    if entity and entity.valid then
+        for _, color in pairs { 'red', 'green' } do
+            local wire_connector = entity.get_wire_connector(defines.wire_connector_id['circuit_' .. color], false)
+            if wire_connector and wire_connector.connection_count > 0 then
+                for _, wire_connection in pairs(wire_connector.connections) do
+                    local ccd = {
+                        wire = defines.wire_type[color],
+                        target_entity = wire_connection.target.owner,
+                        source_circuit_id = wire_connector.wire_connector_id,
+                        target_circuit_id = wire_connection.target.wire_connector_id,
+                    }
+                    table.insert(ccds, ccd)
+                end
+            end
+        end
+    end
+
     if not ccds then
         return {}
     end
@@ -189,7 +206,7 @@ end
 local function on_player_cursor_stack_changed(ev)
     local player_index = ev.player_index
     local cursor_stack = game.players[player_index].cursor_stack
-    if cursor_stack.valid_for_read then
+    if cursor_stack and cursor_stack.valid_for_read then
         local name = cursor_stack.name
         if name == 'red-wire' or name == 'green-wire' then
             if monitored_players[player_index] then
@@ -205,19 +222,43 @@ local function on_player_cursor_stack_changed(ev)
 end
 
 local function on_built_entity(ev)
-    local entity = ev.created_entity or ev.entity or ev.destination
+    local entity = ev.entity or ev.destination
     if not entity.valid then return end
-    local ccds = entity.circuit_connection_definitions or {}
-    for _, ccd in ipairs(ccds) do
-        raise_on_wire_added(entity, ccd)
+
+    for _, color in pairs { 'red', 'green' } do
+        local wire_connector = entity.get_wire_connector(defines.wire_connector_id['circuit_' .. color], false)
+        if wire_connector and wire_connector.connection_count > 0 then
+            for _, wire_connection in pairs(wire_connector.connections) do
+                local ccd = {
+                    wire = defines.wire_type[color],
+                    target_entity = wire_connection.target.owner,
+                    source_circuit_id = wire_connector.wire_connector_id,
+                    target_circuit_id = wire_connection.target.wire_connector_id,
+                }
+
+                raise_on_wire_added(entity, ccd)
+            end
+        end
     end
 end
 
 local function on_entity_mined(ev)
     local entity = ev.entity
-    if entity.valid then
-        for _, ccd in ipairs(entity.circuit_connection_definitions or {}) do
-            raise_on_wire_removed(entity, ccd)
+    if not entity.valid then return end
+
+    for _, color in pairs { 'red', 'green' } do
+        local wire_connector = entity.get_wire_connector(defines.wire_connector_id['circuit_' .. color], false)
+        if wire_connector and wire_connector.connection_count > 0 then
+            for _, wire_connection in pairs(wire_connector.connections) do
+                local ccd = {
+                    wire = defines.wire_type[color],
+                    target_entity = wire_connection.target.owner,
+                    source_circuit_id = wire_connector.wire_connector_id,
+                    target_circuit_id = wire_connection.target.wire_connector_id,
+                }
+    
+                raise_on_wire_removed(entity, ccd)
+            end
         end
     end
 end
@@ -254,20 +295,21 @@ end
 
 local function on_pre_build(ev)
     local player = game.players[ev.player_index]
-    local bp_entities = player.get_blueprint_entities()
-    if not bp_entities or not next(bp_entities) then return end
-    local bp = player.cursor_stack
-    local bp_area = blueprint.bounding_box(bp_entities)
-    local surface_area = util.expand_box(
-        util.move_box(
-            util.rotate_box(bp_area, ev.direction),
-            ev.position
-        ),
-        1
-    )
-    local preexisting_entities = player.surface.find_entities(surface_area)
-    -- check again at the end of this tick, after blueprint has been placed
-    setup_after_blueprint_placed(preexisting_entities)
+    if player.cursor_stack and player.cursor_stack.valid_for_read and player.cursor_stack.name == 'blueprint' then
+        local bp_entities = player.cursor_stack.get_blueprint_entities()
+        if not bp_entities or not next(bp_entities) then return end
+        local bp_area = blueprint.bounding_box(bp_entities)
+        local surface_area = util.expand_box(
+            util.move_box(
+                util.rotate_box(bp_area, ev.direction),
+                ev.position
+            ),
+            1
+        )
+        local preexisting_entities = player.surface.find_entities(surface_area)
+        -- check again at the end of this tick, after blueprint has been placed
+        setup_after_blueprint_placed(preexisting_entities)
+    end
 end
 
 function M.on_init()

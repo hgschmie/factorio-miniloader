@@ -19,6 +19,7 @@ data:extend {
         collision_box = { { -0.1, -0.1 }, { 0.1, 0.1 } },
         collision_mask = collision_mask_util.new_mask(),
         inventory_size = 0,
+        -- picture = data.raw['container']['iron-chest'].picture,
         picture = empty_sheet,
     },
 }
@@ -36,7 +37,7 @@ local function create_loaders(prefix, base_underground_name, tint)
     entity.localised_name = { 'entity-name.' .. loader_name }
     entity.minable = nil
     entity.collision_box = { { -0.3, -0.3 }, { 0.3, 0.3 } }
-    entity.collision_mask = collision_mask_util.get_default_mask('loader')
+    entity.collision_mask = collision_mask_util.get_default_mask('loader-1x1')
     entity.selection_box = { { 0, 0 }, { 0, 0 } }
     entity.filter_count = 0
     entity.fast_replaceable_group = 'loader'
@@ -130,6 +131,8 @@ local function create_loaders(prefix, base_underground_name, tint)
     entity.belt_length = 0.6
     entity.next_upgrade = nil
 
+    entity.collision_mask.not_colliding_with_itself = true
+
     local filter_entity = util.copy(entity)
     filter_entity.name = filter_loader_name .. '-loader'
     filter_entity.structure.direction_in.sheets[1].filename = '__miniloader__/graphics/entity/miniloader-filter-structure-base.png'
@@ -207,6 +210,10 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
         insert_position = { 0, 0 },
         draw_held_item = false,
         draw_inserter_arrow = false,
+        -- platform_picture = data.raw['inserter']['fast-inserter'].platform_picture,
+        -- hand_base_picture = data.raw['inserter']['fast-inserter'].hand_base_picture,
+        -- hand_open_picture = data.raw['inserter']['fast-inserter'].hand_open_picture,
+        -- hand_closed_picture = data.raw['inserter']['fast-inserter'].hand_closed_picture,
         platform_picture = {
             sheets = {
                 -- Base
@@ -248,6 +255,8 @@ local function create_inserters(prefix, next_prefix, base_underground_name, tint
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         next_upgrade = next_upgrade,
     }
+
+    loader_inserter.collision_mask.not_colliding_with_itself = true
 
     if settings.startup['miniloader-energy-usage'].value then
         loader_inserter.energy_per_movement = '2kJ'

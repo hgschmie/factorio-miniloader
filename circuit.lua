@@ -2,6 +2,8 @@ local event = require 'lualib.event'
 local onwireplaced = require 'lualib.onwireplaced'
 local util = require 'lualib.util'
 
+local Util = require 'util'
+
 local M = {}
 
 local function get_inserter_filters(inserter)
@@ -14,6 +16,8 @@ local function get_inserter_filters(inserter)
 end
 
 local function copy_inserter_filters(source_inserter, dest_inserter, filters)
+    if not (source_inserter.prototype.filter_count > 0 and dest_inserter.prototype.filter_count > 0) then return end
+
     local slots = dest_inserter.filter_slot_count
     local inserter_filter_mode = source_inserter.inserter_filter_mode
 
@@ -50,17 +54,47 @@ function M.sync_filters(entity)
     end
 end
 
-local function copy_inserter_behavior(source_inserter, target)
-    local source_behavior = source_inserter.get_or_create_control_behavior()
-    local behavior = target.get_or_create_control_behavior()
-    behavior.circuit_read_hand_contents = source_behavior.circuit_read_hand_contents
-    behavior.circuit_mode_of_operation = source_behavior.circuit_mode_of_operation
-    behavior.circuit_hand_read_mode = source_behavior.circuit_hand_read_mode
-    behavior.circuit_set_stack_size = false
-    behavior.circuit_stack_control_signal = { type = 'item' }
-    behavior.circuit_condition = source_behavior.circuit_condition
-    behavior.logistic_condition = source_behavior.logistic_condition
-    behavior.connect_to_logistic_network = source_behavior.connect_to_logistic_network
+local control_attributes = {
+    'circuit_set_filters',
+    'circuit_read_hand_contents',
+    'circuit_hand_read_mode',
+    'circuit_set_stack_size',
+    'circuit_stack_control_signal',
+    'circuit_enable_disable',
+    'circuit_condition',
+    'connect_to_logistic_network',
+    'logistic_condition',
+}
+
+local entity_attributes = {
+    'inserter_stack_size_override',
+}
+
+local filter_attributes = {
+    'use_filters',
+    'inserter_filter_mode',
+}
+
+
+local function copy_inserter_behavior(source_inserter, target_inserter)
+    local src_control = source_inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+    local target_control = target_inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+    assert(src_control)
+    assert(target_control)
+
+    for _, attribute in pairs(control_attributes) do
+        target_control[attribute] = src_control[attribute]
+    end
+
+    for _, attribute in pairs(entity_attributes) do
+        target_inserter[attribute] = source_inserter[attribute]
+    end
+
+    if source_inserter.prototype.filter_count > 0 and target_inserter.prototype.filter_count > 0 then
+        for _, attribute in pairs(filter_attributes) do
+            target_inserter[attribute] = source_inserter[attribute]
+        end
+    end
 end
 
 function M.copy_inserter_settings(source, target)
@@ -102,28 +136,44 @@ end
 
 local function connected_non_partners(inserters, removed)
     local out = { [defines.wire_type.red] = {}, [defines.wire_type.green] = {} }
+
     for _, inserter in ipairs(inserters) do
-        local ccds = inserter.circuit_connection_definitions
         local pos = inserter.position
-        for _, ccd in ipairs(ccds) do
-            ccd.entity = inserter
-            local otherpos = ccd.target_entity.position
-            if (otherpos.x ~= pos.x or otherpos.y ~= pos.y) and not ccds_match(ccd, removed) then
-                table.insert(out[ccd.wire], ccd)
+        for _, color in pairs { 'red', 'green' } do
+            local wire_connector = inserter.get_wire_connector(defines.wire_connector_id['circuit_' .. color], false)
+            if wire_connector and wire_connector.connection_count > 0 then
+                for _, wire_connection in pairs(wire_connector.connections) do
+                    local target_entity = wire_connection.target.owner
+                    local ccd = {
+                        wire = defines.wire_type[color],
+                        entity = inserter,
+                        target_entity = target_entity,
+                        source_circuit_id = wire_connector.wire_connector_id,
+                        target_circuit_id = wire_connection.target.wire_connector_id,
+                    }
+                    local otherpos = target_entity.position
+                    if (otherpos.x ~= pos.x or otherpos.y ~= pos.y) and not ccds_match(ccd, removed) then
+                        table.insert(out[ccd.wire], ccd)
+                    end
+                end
             end
         end
     end
     return out
 end
 
+local foo = {
+    [defines.wire_type.green] = defines.wire_connector_id.circuit_green,
+    [defines.wire_type.red] = defines.wire_connector_id.circuit_red,
+}
+
 local function count_connections_on_wire(entity, wire_type)
-    local count = 0
-    for _, ccd in ipairs(entity.circuit_connection_definitions) do
-        if ccd.wire == wire_type then
-            count = count + 1
-        end
+    local wire_connector = entity.get_wire_connector(foo[wire_type], false)
+    if wire_connector then
+        return wire_connector.connection_count
     end
-    return count
+
+    return 0
 end
 
 local function partner_connections_need_sync(inserters, connections)
@@ -132,7 +182,7 @@ local function partner_connections_need_sync(inserters, connections)
         return false
     end
     for wire_type, wire_connections in pairs(connections) do
-        local network = master_inserter.get_circuit_network(wire_type)
+        local network = master_inserter.get_wire_connector(foo[wire_type])
         if network then
             if not next(wire_connections) then
                 --log("no external connections on wire color")
@@ -154,7 +204,7 @@ local function partner_connections_need_sync(inserters, connections)
         else
             for i = 2, #inserters do
                 local slave_inserter = inserters[i]
-                local slave_network = slave_inserter.get_circuit_network(wire_type)
+                local slave_network = slave_inserter.get_circuit_network(foo[wire_type])
                 if slave_network then
                     --log("slave has network connection")
                     return true
@@ -166,13 +216,11 @@ local function partner_connections_need_sync(inserters, connections)
     return false
 end
 
-function M.sync_partner_connections(inserter, removed)
+function M.sync_partner_connections(inserter, removed, seen)
+    seen = seen or {}
+
     local inserters = util.get_loader_inserters(inserter)
     local connections = connected_non_partners(inserters, removed)
-
-    if not partner_connections_need_sync(inserters, connections) then
-        return
-    end
 
     M.sync_behavior(inserter)
     local master_inserter = inserters[1]
@@ -180,26 +228,34 @@ function M.sync_partner_connections(inserter, removed)
     for wire_type, ccds in pairs(connections) do
         if not next(ccds) then
             for _, ins in ipairs(inserters) do
-                ins.disconnect_neighbour(wire_type)
+                local wire_connector = ins.get_wire_connector(foo[wire_type], true)
+                wire_connector.disconnect_all()
             end
         else
-            master_inserter.disconnect_neighbour(wire_type)
+            local wire_connector = master_inserter.get_wire_connector(foo[wire_type], true)
+            wire_connector.disconnect_all()
             for _, ccd in ipairs(ccds) do
-                master_inserter.connect_neighbour(ccd)
-                if util.is_miniloader_inserter(ccd.target_entity) then
+                local target_connector = ccd.target_entity.get_wire_connector(ccd.target_circuit_id, true)
+                wire_connector.connect_to(target_connector, false, defines.wire_origin.player)
+                if util.is_miniloader_inserter(ccd.target_entity) and not seen[ccd.target_entity.unit_number] then
                     other_miniloader_inserters[#other_miniloader_inserters + 1] = ccd.target_entity
                 end
             end
             for i = 2, #inserters do
                 local ins = inserters[i]
-                ins.disconnect_neighbour(wire_type)
-                ins.connect_neighbour { wire = wire_type, target_entity = master_inserter }
+                local ins_wire_connector = ins.get_wire_connector(foo[wire_type], true)
+                ins_wire_connector.disconnect_all()
+                ins_wire_connector.connect_to(wire_connector, false, defines.wire_origin.script)
             end
         end
     end
 
+    for _, ins in pairs(inserters) do
+        seen[ins.unit_number] = ins
+    end
+
     for _, other_miniloader_inserter in pairs(other_miniloader_inserters) do
-        M.sync_partner_connections(other_miniloader_inserter)
+        M.sync_partner_connections(other_miniloader_inserter, nil, seen)
     end
 end
 
